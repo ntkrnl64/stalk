@@ -16,12 +16,15 @@ public class Stalk extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        if (!getDataFolder().exists()) {
+            getDataFolder().mkdirs();
+        }
+
         this.logManager = new LogManager(this);
 
         getServer().getPluginManager().registerEvents(new MovementListener(this), this);
         getServer().getPluginManager().registerEvents(new SocialListener(this), this);
         getServer().getPluginManager().registerEvents(new ActivityListener(this), this);
-
         getServer().getPluginManager().registerEvents(new InventoryListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityListener(this), this);
 
