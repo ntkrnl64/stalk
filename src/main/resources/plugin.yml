@@ -1,0 +1,16 @@
+name: stalk
+version: '1.0'
+main: org.krnl.stalk.Stalk
+api-version: '1.21'
+authors: [ NtKrnl32, NtKrnl64 ]
+description: Always watching :)
+website: https://krnl64.win
+commands:
+  stalk:
+    description: 查询玩家操作记录
+    usage: /stalk search <player> [limit]
+    permission: stalk.admin
+permissions:
+  stalk.admin:
+    description: 允许查询日志
+    default: op
