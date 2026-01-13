@@ -16,6 +16,8 @@ public class Stalk extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
+
         if (!getDataFolder().exists()) {
             getDataFolder().mkdirs();
         }

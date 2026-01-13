@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.krnl.stalk.Stalk;
 
@@ -11,6 +12,7 @@ import java.io.File;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,24 +24,44 @@ public class LogManager {
     private final ExecutorService ioExecutor;
     private Connection connection;
 
-    // 用于显示的格式化工具
+    private final Set<String> disabledActions = new HashSet<>();
+
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public LogManager(Stalk plugin) {
         this.plugin = plugin;
         this.dbFile = new File(plugin.getDataFolder(), "stalk_data.db");
-
         this.ioExecutor = Executors.newSingleThreadExecutor();
 
+        loadSettings();
         initDatabase();
+    }
+
+    /**
+     * 从 config.yml 加载配置
+     */
+    public void loadSettings() {
+        disabledActions.clear();
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("logging");
+
+        if (section != null) {
+            for (String key : section.getKeys(false)) {
+                if (!section.getBoolean(key)) {
+                    disabledActions.add(key);
+                }
+            }
+        }
+
+        if (!disabledActions.isEmpty()) {
+            plugin.getLogger().info("已禁用的日志类型: " + disabledActions);
+        }
     }
 
     private void initDatabase() {
         ioExecutor.submit(() -> {
             try {
                 Class.forName("org.sqlite.JDBC");
-
                 String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
                 connection = DriverManager.getConnection(url);
 
@@ -64,9 +86,7 @@ public class LogManager {
                     stmt.execute("CREATE INDEX IF NOT EXISTS idx_player ON logs(player_name);");
                     stmt.execute("CREATE INDEX IF NOT EXISTS idx_time ON logs(time_stamp);");
                 }
-
                 plugin.getLogger().info("SQLite 数据库已连接并初始化。");
-
             } catch (Exception e) {
                 plugin.getLogger().severe("数据库初始化失败: " + e.getMessage());
                 e.printStackTrace();
@@ -78,6 +98,10 @@ public class LogManager {
      * 记录操作到数据库
      */
     public void log(Player player, String action, String details) {
+        if (disabledActions.contains(action)) {
+            return;
+        }
+
         Location loc = player.getLocation();
         long now = System.currentTimeMillis();
 
@@ -110,7 +134,7 @@ public class LogManager {
     }
 
     /**
-     * 查询日志 (使用 SQL 过滤)
+     * 查询日志
      */
     public void searchLogs(CommandSender sender, String playerName, int limit, Set<String> ignoredActions, boolean hideUuid) {
         ioExecutor.submit(() -> {
@@ -121,10 +145,8 @@ public class LogManager {
 
             sender.sendMessage(Component.text("正在查询数据库: " + playerName + "...", NamedTextColor.YELLOW));
 
-            // 构建 SQL 查询
             StringBuilder sqlBuilder = new StringBuilder("SELECT * FROM logs WHERE player_name LIKE ?");
 
-            // 动态添加过滤条件
             if (!ignoredActions.isEmpty()) {
                 sqlBuilder.append(" AND action NOT IN (");
                 for (int i = 0; i < ignoredActions.size(); i++) {
@@ -133,19 +155,14 @@ public class LogManager {
                 sqlBuilder.append(")");
             }
 
-            // 排序和限制 (最新的在前)
             sqlBuilder.append(" ORDER BY time_stamp DESC LIMIT ?");
 
             try (PreparedStatement pstmt = connection.prepareStatement(sqlBuilder.toString())) {
                 int paramIndex = 1;
-                // 支持模糊搜索，如果输入完整名字也兼容
                 pstmt.setString(paramIndex++, playerName + "%");
-
-                // 填充忽略的动作
                 for (String ignore : ignoredActions) {
                     pstmt.setString(paramIndex++, ignore);
                 }
-
                 pstmt.setInt(paramIndex, limit);
 
                 try (ResultSet rs = pstmt.executeQuery()) {
@@ -161,13 +178,10 @@ public class LogManager {
                         int y = rs.getInt("y");
                         int z = rs.getInt("z");
 
-                        // 格式化输出字符串，保持与原来文本日志相似的格式
                         String locStr = String.format("[w:%s x:%d y:%d z:%d]", w, x, y, z);
                         String timeStr = timeFormat.format(new Date(timestamp));
-
                         String uuidPart = hideUuid ? "" : (" " + pUuid);
 
-                        // [12:00:00] [Steve] UUID | ACTION | Details | Loc: ...
                         String msg = String.format("[%s] [%s]%s | %s | %s | Loc: %s",
                                 timeStr, pName, uuidPart, act, det, locStr);
 

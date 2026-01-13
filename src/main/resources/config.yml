@@ -1,0 +1,27 @@
+logging:
+  # 移动 (最占空间，如果不关心玩家轨迹建议关闭)
+  CHUNK_MOVE: true
+
+  # 社交
+  CHAT: true
+  COMMAND: true
+  SESSION: true  # 加入/退出
+
+  # 交互与方块
+  BLOCK_BREAK: true
+  BLOCK_PLACE: true
+  INTERACT: true
+  DROP_ITEM: true
+  PICKUP_ITEM: true
+
+  # 战斗
+  ATTACK: true
+  DEATH: true
+  DEATH_PLAYER: true
+  KILL_ENTITY: true
+
+  # 容器与物品栏
+  CONTAINER_OPEN: true
+  CONTAINER_CLOSE: true
+  CONTAINER_TRANSACTION: true # 容器内的物品交换
+  INV_CLICK: true             # 玩家背包内的点击
