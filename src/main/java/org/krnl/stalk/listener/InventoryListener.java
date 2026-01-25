@@ -46,7 +46,6 @@ public class InventoryListener implements Listener {
             if (isValidContainer(top)) {
                 String locStr = getContainerLoc(top);
                 String contents = getInventoryContents(top);
-
                 plugin.getLogManager().log(player, "CONTAINER_CLOSE",
                         "Type: " + top.getType().name() + " | " + locStr + " | Contents: " + contents);
             }
@@ -86,6 +85,7 @@ public class InventoryListener implements Listener {
             context = "CONTAINER_TRANSACTION";
             locStr = " | " + getContainerLoc(clickedInv);
         }
+
         plugin.getLogManager().log(player, context,
                 String.format("[%s] Action: %s | %s | Slot: %d%s", invType, action, itemInfo, event.getSlot(), locStr));
     }

@@ -1,5 +1,5 @@
 name: stalk
-version: '1.2'
+version: '1.3'
 main: org.krnl.stalk.Stalk
 api-version: '1.21'
 authors: [ NtKrnl32, NtKrnl64 ]

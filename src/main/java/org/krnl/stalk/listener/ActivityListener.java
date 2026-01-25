@@ -27,28 +27,43 @@ public class ActivityListener implements Listener {
     public void onBreak(BlockBreakEvent event) {
         Block b = event.getBlock();
         String itemStr = formatItem(event.getPlayer().getInventory().getItemInMainHand());
-        plugin.getLogManager().log(event.getPlayer(), "BLOCK_BREAK",
-                b.getType().name() + " | Tool: " + itemStr);
+        plugin.getLogManager().log(
+                event.getPlayer().getName(),
+                event.getPlayer().getUniqueId().toString(),
+                "BLOCK_BREAK",
+                b.getType().name() + " | Tool: " + itemStr,
+                b.getLocation()
+        );
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent event) {
         Block b = event.getBlockPlaced();
-        plugin.getLogManager().log(event.getPlayer(), "BLOCK_PLACE", b.getType().name());
+        plugin.getLogManager().log(
+                event.getPlayer().getName(),
+                event.getPlayer().getUniqueId().toString(),
+                "BLOCK_PLACE",
+                b.getType().name(),
+                b.getLocation()
+        );
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
-        if (event.getClickedBlock() == null && event.getAction().name().contains("AIR")) return;
+        if (event.getClickedBlock() == null) return;
+        if (event.getAction().name().contains("AIR")) return;
 
         String action = event.getAction().name();
-        String target = (event.getClickedBlock() != null) ? event.getClickedBlock().getType().name() : "AIR";
+        String target = event.getClickedBlock().getType().name();
         String handItem = formatItem(event.getItem());
 
-        if (event.getClickedBlock() != null && event.getClickedBlock().getType() != Material.AIR) {
-            plugin.getLogManager().log(event.getPlayer(), "INTERACT",
-                    String.format("%s on %s | Hand: %s", action, target, handItem));
-        }
+        plugin.getLogManager().log(
+                event.getPlayer().getName(),
+                event.getPlayer().getUniqueId().toString(),
+                "INTERACT",
+                String.format("%s on %s | Hand: %s", action, target, handItem),
+                event.getClickedBlock().getLocation()
+        );
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -62,15 +77,12 @@ public class ActivityListener implements Listener {
         if (event.getDamager() instanceof Player player) {
             Entity victim = event.getEntity();
             String victimInfo;
-
             if (victim instanceof Player victimPlayer) {
                 victimInfo = String.format("Player: %s (UUID: %s)", victimPlayer.getName(), victimPlayer.getUniqueId());
             } else {
                 victimInfo = String.format("Entity: %s (UUID: %s)", victim.getType().name(), victim.getUniqueId());
             }
-
             String weapon = formatItem(player.getInventory().getItemInMainHand());
-
             plugin.getLogManager().log(player, "ATTACK",
                     String.format("Target: [%s] | Dmg: %.2f | Weapon: %s", victimInfo, event.getFinalDamage(), weapon));
         }
